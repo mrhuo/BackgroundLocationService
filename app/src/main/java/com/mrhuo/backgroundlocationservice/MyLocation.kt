@@ -4,6 +4,7 @@ import android.location.Location
 import java.io.Serializable
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.util.*
 
 data class MyLocation(
     var provider: String,
@@ -18,14 +19,25 @@ data class MyLocation(
 ): Serializable {
     constructor(location: Location, satellite: Int = 0): this(
         location.provider,
-        location.latitude.roundFormat(5),
-        location.longitude.roundFormat(5),
-        location.altitude.roundFormat(5),
+        location.latitude.roundFormat(6),
+        location.longitude.roundFormat(6),
+        location.altitude.roundFormat(6),
         location.accuracy,
         location.speed,
         location.bearing,
         location.time,
         satellite
+    )
+    constructor(latitude: Double, longitude: Double): this(
+        "gps",
+        latitude,
+        longitude,
+        0.0,
+        0f,
+        0f,
+        0f,
+        Date().time,
+        0
     )
 
     override fun toString(): String {

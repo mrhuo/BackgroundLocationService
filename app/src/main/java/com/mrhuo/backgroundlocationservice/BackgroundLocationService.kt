@@ -23,6 +23,8 @@ import kotlin.concurrent.fixedRateTimer
 internal const val TAG = "BKLocationService"
 internal const val ACTION_LOCATION = "CRLocationService.action.LOCATION"
 internal const val EXTRA_LOCATION_PROVIDER = "CRLocationService.extra.LOCATION_PROVIDER"
+internal const val EXTRA_LOCATION_MIN_TIME_MS = "CRLocationService.extra.MIN_TIME_MS"
+internal const val EXTRA_LOCATION_MIN_DISTANCE_M = "CRLocationService.extra.DISTANCE_M"
 internal const val BROADCAST_RECEIVER_REPORT_LOCATION = "NaviLocationBroadcastReceiver.REPORT_LOCATION"
 internal const val BROADCAST_RECEIVER_REPORT_ERROR = "NaviLocationBroadcastReceiver.REPORT_ERROR"
 internal const val BROADCAST_RECEIVER_REPORT_PROVIDER_STATUS = "NaviLocationBroadcastReceiver.REPORT_PROVIDER_STATUS"
@@ -72,7 +74,9 @@ class BackgroundLocationService : Service() {
         when (intent?.action) {
             ACTION_LOCATION -> {
                 val provider = intent.getStringExtra(EXTRA_LOCATION_PROVIDER) ?: "gps"
-                logger("onStartCommand [provider=$provider]")
+                val minTimeMS = intent.getLongExtra(EXTRA_LOCATION_MIN_TIME_MS, 0)
+                val minDistanceM = intent.getFloatExtra(EXTRA_LOCATION_MIN_DISTANCE_M, 0f)
+                logger("onStartCommand [provider=$provider, minTimeMS=$minTimeMS, minDistanceM=$minDistanceM]")
                 if (provider.isEmpty()) {
                     reportError(this, "设备[${provider}]不可用")
                     return super.onStartCommand(intent, flags, startId)
@@ -87,7 +91,7 @@ class BackgroundLocationService : Service() {
                         }
                         mLocationManager?.registerGnssStatusCallback(mGNSSStatusCallback!!)
                     }
-                    mLocationManager?.requestLocationUpdates(provider, 0, 0.0f, mLocationListener!!)
+                    mLocationManager?.requestLocationUpdates(provider, minTimeMS, minDistanceM, mLocationListener!!)
                     mLocationLossNotifyTimer = fixedRateTimer("mIdleNotifyTimer", initialDelay = 1000, period = mLocationLossCheckInterval) {
                         val lossTime = if (mLastLocationTime != null) {
                             Date().time - mLastLocationTime!!.time
@@ -243,12 +247,16 @@ class BackgroundLocationService : Service() {
         @JvmStatic
         fun startLocationService(
             context: Context,
-            provider: String = "gps"
+            provider: String = "gps",
+            minTimeMS: Long = 0,
+            minDistanceM: Float = 0f
         ) {
             try {
                 val intent = Intent(context, BackgroundLocationService::class.java).apply {
                     action = ACTION_LOCATION
                     putExtra(EXTRA_LOCATION_PROVIDER, provider)
+                    putExtra(EXTRA_LOCATION_MIN_TIME_MS, minTimeMS)
+                    putExtra(EXTRA_LOCATION_MIN_DISTANCE_M, minDistanceM)
                 }
                 context.startService(intent)
                 logger("[${context}] startLocationService success")
