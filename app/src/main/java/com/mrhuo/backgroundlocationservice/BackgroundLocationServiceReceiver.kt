@@ -11,13 +11,13 @@ abstract class BackgroundLocationServiceReceiver : BroadcastReceiver() {
             return
         }
         when (intent.action) {
-            BROADCAST_RECEIVER_REPORT_ERROR -> {
+            ACTION_REPORT_ERROR -> {
                 val errorMessage = intent.getStringExtra("error")
                 if (errorMessage != null) {
                     onReceiveError(errorMessage)
                 }
             }
-            BROADCAST_RECEIVER_REPORT_LOCATION -> {
+            ACTION_REPORT_LOCATION -> {
                 val location: MyLocation? = intent.getSerializableExtra("location") as MyLocation?
                 if (location != null) {
                     onReceiveLocation(location)
@@ -25,11 +25,11 @@ abstract class BackgroundLocationServiceReceiver : BroadcastReceiver() {
                     onReceiveError("未获取到经纬度")
                 }
             }
-            BROADCAST_RECEIVER_REPORT_LOCATION_LOSS -> {
+            ACTION_REPORT_LOCATION_LOSS -> {
                 val lossTime = intent.getLongExtra("lossTime", 0)
                 onLocationLoss(lossTime)
             }
-            BROADCAST_RECEIVER_REPORT_PROVIDER_STATUS -> {
+            ACTION_REPORT_PROVIDER_STATUS -> {
                 val provider = intent.getStringExtra("provider") ?: ""
                 val status = intent.getBooleanExtra("status", false)
                 onProviderStatusChanged(provider, status)
