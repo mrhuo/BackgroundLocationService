@@ -3,6 +3,8 @@ package com.mrhuo.backgroundlocationservice
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import com.mrhuo.backgroundlocationservice.model.MyLocation
+import com.mrhuo.backgroundlocationservice.util.logger
 import kotlin.math.roundToInt
 
 abstract class BackgroundLocationServiceReceiver : BroadcastReceiver() {

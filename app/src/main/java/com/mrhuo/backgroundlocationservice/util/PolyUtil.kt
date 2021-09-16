@@ -1,5 +1,6 @@
-package com.mrhuo.backgroundlocationservice
+package com.mrhuo.backgroundlocationservice.util
 
+import com.mrhuo.backgroundlocationservice.model.LatLng
 import java.util.*
 
 object PolyUtil {
@@ -67,7 +68,7 @@ object PolyUtil {
         ) else MathUtil.mercator(lat3) >= mercatorLatRhumb(lat1, lat2, lng2, lng3)
     }
 
-    fun containsLocation(point: MyLocation, polygon: List<MyLocation>, geodesic: Boolean): Boolean {
+    fun containsLocation(point: LatLng, polygon: List<LatLng>, geodesic: Boolean): Boolean {
         return containsLocation(point.latitude, point.longitude, polygon, geodesic)
     }
 
@@ -82,7 +83,7 @@ object PolyUtil {
     fun containsLocation(
         latitude: Double,
         longitude: Double,
-        polygon: List<MyLocation>,
+        polygon: List<LatLng>,
         geodesic: Boolean
     ): Boolean {
         val size = polygon.size
@@ -130,7 +131,7 @@ object PolyUtil {
      * closing segment between the first point and the last point is included.
      */
     fun isLocationOnEdge(
-        point: MyLocation, polygon: List<MyLocation>, geodesic: Boolean,
+        point: LatLng, polygon: List<LatLng>, geodesic: Boolean,
         tolerance: Double
     ): Boolean {
         return isLocationOnEdgeOrPath(point, polygon, true, geodesic, tolerance)
@@ -140,7 +141,7 @@ object PolyUtil {
      * Same as [.isLocationOnEdge]
      * with a default tolerance of 0.1 meters.
      */
-    fun isLocationOnEdge(point: MyLocation, polygon: List<MyLocation>, geodesic: Boolean): Boolean {
+    fun isLocationOnEdge(point: LatLng, polygon: List<LatLng>, geodesic: Boolean): Boolean {
         return isLocationOnEdge(point, polygon, geodesic, DEFAULT_TOLERANCE)
     }
 
@@ -151,7 +152,7 @@ object PolyUtil {
      * segment between the first point and the last point is not included.
      */
     fun isLocationOnPath(
-        point: MyLocation, polyline: List<MyLocation>,
+        point: LatLng, polyline: List<LatLng>,
         geodesic: Boolean, tolerance: Double
     ): Boolean {
         return isLocationOnEdgeOrPath(point, polyline, false, geodesic, tolerance)
@@ -164,14 +165,14 @@ object PolyUtil {
      * with a default tolerance of 0.1 meters.
      */
     fun isLocationOnPath(
-        point: MyLocation, polyline: List<MyLocation>,
+        point: LatLng, polyline: List<LatLng>,
         geodesic: Boolean
     ): Boolean {
         return isLocationOnPath(point, polyline, geodesic, DEFAULT_TOLERANCE)
     }
 
     private fun isLocationOnEdgeOrPath(
-        point: MyLocation, poly: List<MyLocation>, closed: Boolean,
+        point: LatLng, poly: List<LatLng>, closed: Boolean,
         geodesic: Boolean, toleranceEarth: Double
     ): Boolean {
         val idx = locationIndexOnEdgeOrPath(point, poly, closed, geodesic, toleranceEarth)
@@ -194,7 +195,7 @@ object PolyUtil {
      * poly.size()-2 if between poly[poly.size() - 2] and poly[poly.size() - 1]
      */
     fun locationIndexOnPath(
-        point: MyLocation, poly: List<MyLocation>,
+        point: LatLng, poly: List<LatLng>,
         geodesic: Boolean, tolerance: Double
     ): Int {
         return locationIndexOnEdgeOrPath(point, poly, false, geodesic, tolerance)
@@ -207,7 +208,7 @@ object PolyUtil {
      * with a default tolerance of 0.1 meters.
      */
     fun locationIndexOnPath(
-        point: MyLocation, polyline: List<MyLocation>,
+        point: LatLng, polyline: List<LatLng>,
         geodesic: Boolean
     ): Int {
         return locationIndexOnPath(point, polyline, geodesic, DEFAULT_TOLERANCE)
@@ -230,7 +231,7 @@ object PolyUtil {
      * poly.size()-2 if between poly[poly.size() - 2] and poly[poly.size() - 1]
      */
     fun locationIndexOnEdgeOrPath(
-        point: MyLocation, poly: List<MyLocation>, closed: Boolean,
+        point: LatLng, poly: List<LatLng>, closed: Boolean,
         geodesic: Boolean, toleranceEarth: Double
     ): Int {
         val size = poly.size
@@ -385,21 +386,21 @@ object PolyUtil {
      * simplified poly.
      * @return a simplified poly produced by the Douglas-Peucker algorithm
      */
-    fun simplify(poly: MutableList<MyLocation>, tolerance: Double): List<MyLocation?> {
+    fun simplify(poly: MutableList<LatLng>, tolerance: Double): List<LatLng?> {
         val n = poly.size
         require(n >= 1) { "Polyline must have at least 1 point" }
         require(tolerance > 0) { "Tolerance must be greater than zero" }
         val closedPolygon = isClosedPolygon(poly)
-        var lastPoint: MyLocation? = null
+        var lastPoint: LatLng? = null
 
         // Check if the provided poly is a closed polygon
         if (closedPolygon) {
             // Add a small offset to the last point for Douglas-Peucker on polygons (see #201)
             val OFFSET = 0.00000000001
             lastPoint = poly[poly.size - 1]
-            // MyLocation.latitude and .longitude are immutable, so replace the last point
+            // LatLng.latitude and .longitude are immutable, so replace the last point
             poly.removeAt(poly.size - 1)
-            poly.add(MyLocation(lastPoint!!.latitude + OFFSET, lastPoint.longitude + OFFSET))
+            poly.add(LatLng(lastPoint!!.latitude + OFFSET, lastPoint.longitude + OFFSET))
         }
         var idx: Int
         var maxIdx = 0
@@ -447,7 +448,7 @@ object PolyUtil {
 
         // Generate the simplified line
         idx = 0
-        val simplifiedLine = ArrayList<MyLocation?>()
+        val simplifiedLine = ArrayList<LatLng?>()
         for (l in poly) {
             if (dists[idx] != 0.0) {
                 simplifiedLine.add(l)
@@ -465,7 +466,7 @@ object PolyUtil {
      * @return true if the provided list of points is a closed polygon (i.e., the first and last
      * points are the same), and false if it is not
      */
-    fun isClosedPolygon(poly: List<MyLocation?>): Boolean {
+    fun isClosedPolygon(poly: List<LatLng?>): Boolean {
         val firstPoint = poly[0]
         val lastPoint = poly[poly.size - 1]
         return firstPoint!!.equals(lastPoint)
@@ -479,7 +480,7 @@ object PolyUtil {
      * @param end   the end of the line segment
      * @return the distance in meters (assuming spherical earth)
      */
-    fun distanceToLine(p: MyLocation, start: MyLocation, end: MyLocation): Double {
+    fun distanceToLine(p: LatLng, start: LatLng, end: LatLng): Double {
         if (start.equals(end)) {
             return SphericalUtil.computeDistanceBetween(end, p)
         }
@@ -499,7 +500,7 @@ object PolyUtil {
         if (u >= 1) {
             return SphericalUtil.computeDistanceBetween(p, end)
         }
-        val su = MyLocation(
+        val su = LatLng(
             start.latitude + u * (end.latitude - start.latitude),
             start.longitude + u * (end.longitude - start.longitude)
         )
@@ -509,12 +510,12 @@ object PolyUtil {
     /**
      * Decodes an encoded path string into a sequence of LatLngs.
      */
-    fun decode(encodedPath: String): List<MyLocation> {
+    fun decode(encodedPath: String): List<LatLng> {
         val len = encodedPath.length
 
         // For speed we preallocate to an upper bound on the final length, then
         // truncate the array before returning.
-        val path: MutableList<MyLocation> = ArrayList()
+        val path: MutableList<LatLng> = ArrayList()
         var index = 0
         var lat = 0
         var lng = 0
@@ -536,7 +537,7 @@ object PolyUtil {
                 shift += 5
             } while (b >= 0x1f)
             lng += if (result and 1 != 0) (result shr 1).inv() else result shr 1
-            path.add(MyLocation(lat * 1e-5, lng * 1e-5))
+            path.add(LatLng(lat * 1e-5, lng * 1e-5))
         }
         return path
     }
@@ -544,7 +545,7 @@ object PolyUtil {
     /**
      * Encodes a sequence of LatLngs into an encoded path string.
      */
-    fun encode(path: List<MyLocation>): String {
+    fun encode(path: List<LatLng>): String {
         var lastLat: Long = 0
         var lastLng: Long = 0
         val result = StringBuffer()

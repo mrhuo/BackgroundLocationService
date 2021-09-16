@@ -1,4 +1,4 @@
-package com.mrhuo.backgroundlocationservice
+package com.mrhuo.backgroundlocationservice.model
 
 import android.location.Location
 import java.io.Serializable
@@ -8,15 +8,16 @@ import java.util.*
 
 data class MyLocation(
     var provider: String,
-    var latitude: Double,
-    var longitude: Double,
+    override var latitude: Double,
+    override var longitude: Double,
     var altitude: Double,
     var accuracy: Float,
     var speed: Float,
     var bearing: Float,
     var time: Long,
     var satellite: Int = 0
-): Serializable {
+): LatLng(latitude, longitude), Serializable {
+
     constructor(location: Location, satellite: Int = 0): this(
         location.provider,
         location.latitude.roundFormat(6),
@@ -39,20 +40,7 @@ data class MyLocation(
         Date().time,
         0
     )
-
-    override fun toString(): String {
-        return "CRLocation(" +
-                "provider='$provider', " +
-                "latitude=$latitude, " +
-                "longitude=$longitude, " +
-                "altitude=$altitude, " +
-                "accuracy=$accuracy, " +
-                "speed=$speed, " +
-                "bearing=$bearing, " +
-                "time=$time, " +
-                "satellite=$satellite" +
-                ")"
-    }
+    constructor() : this(0.0, 0.0)
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -70,6 +58,20 @@ data class MyLocation(
         var result = latitude.hashCode()
         result = 31 * result + longitude.hashCode()
         return result
+    }
+
+    override fun toString(): String {
+        return "MyLocation(" +
+                "provider='$provider', " +
+                "latitude=$latitude, " +
+                "longitude=$longitude, " +
+                "altitude=$altitude, " +
+                "accuracy=$accuracy, " +
+                "speed=$speed, " +
+                "bearing=$bearing, " +
+                "time=$time, " +
+                "satellite=$satellite" +
+                ")"
     }
 
     companion object {

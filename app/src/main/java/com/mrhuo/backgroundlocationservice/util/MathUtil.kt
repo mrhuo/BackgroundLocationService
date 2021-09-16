@@ -1,4 +1,4 @@
-package com.mrhuo.backgroundlocationservice
+package com.mrhuo.backgroundlocationservice.util
 
 /**
  * Utility functions that are used my both PolyUtil and SphericalUtil.

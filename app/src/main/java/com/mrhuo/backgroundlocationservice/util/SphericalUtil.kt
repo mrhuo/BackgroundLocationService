@@ -1,14 +1,16 @@
-package com.mrhuo.backgroundlocationservice
+package com.mrhuo.backgroundlocationservice.util
+
+import com.mrhuo.backgroundlocationservice.model.LatLng
 
 object SphericalUtil {
 
     /**
-     * Returns the heading from one MyLocation to another MyLocation. Headings are
+     * Returns the heading from one LatLng to another LatLng. Headings are
      * expressed in degrees clockwise from North within the range [-180,180).
      *
      * @return The heading in degrees clockwise from north.
      */
-    fun computeHeading(from: MyLocation, to: MyLocation): Double {
+    fun computeHeading(from: LatLng, to: LatLng): Double {
         // http://williams.best.vwh.net/avform.htm#Crs
         val fromLat = Math.toRadians(from.latitude)
         val fromLng = Math.toRadians(from.longitude)
@@ -25,52 +27,52 @@ object SphericalUtil {
     }
 
     /**
-     * Returns the MyLocation resulting from moving a distance from an origin
+     * Returns the LatLng resulting from moving a distance from an origin
      * in the specified heading (expressed in degrees clockwise from north).
      *
-     * @param from     The MyLocation from which to start.
+     * @param from     The LatLng from which to start.
      * @param distance The distance to travel.
      * @param heading  The heading in degrees clockwise from north.
      */
-    fun computeOffset(from: MyLocation, distance: Double, heading: Double): MyLocation {
-        var distance = distance
-        var heading = heading
-        distance /= MathUtil.EARTH_RADIUS
-        heading = Math.toRadians(heading)
+    fun computeOffset(from: LatLng, distance: Double, heading: Double): LatLng {
+        var _distance = distance
+        var _heading = heading
+        _distance /= MathUtil.EARTH_RADIUS
+        _heading = Math.toRadians(_heading)
         // http://williams.best.vwh.net/avform.htm#LL
         val fromLat = Math.toRadians(from.latitude)
         val fromLng = Math.toRadians(from.longitude)
-        val cosDistance = Math.cos(distance)
-        val sinDistance = Math.sin(distance)
+        val cosDistance = Math.cos(_distance)
+        val sinDistance = Math.sin(_distance)
         val sinFromLat = Math.sin(fromLat)
         val cosFromLat = Math.cos(fromLat)
-        val sinLat = cosDistance * sinFromLat + sinDistance * cosFromLat * Math.cos(heading)
+        val sinLat = cosDistance * sinFromLat + sinDistance * cosFromLat * Math.cos(_heading)
         val dLng = Math.atan2(
-            sinDistance * cosFromLat * Math.sin(heading),
+            sinDistance * cosFromLat * Math.sin(_heading),
             cosDistance - sinFromLat * sinLat
         )
-        return MyLocation(Math.toDegrees(Math.asin(sinLat)), Math.toDegrees(fromLng + dLng))
+        return LatLng(Math.toDegrees(Math.asin(sinLat)), Math.toDegrees(fromLng + dLng))
     }
 
     /**
-     * Returns the location of origin when provided with a MyLocation destination,
+     * Returns the location of origin when provided with a LatLng destination,
      * meters travelled and original heading. Headings are expressed in degrees
      * clockwise from North. This function returns null when no solution is
      * available.
      *
-     * @param to       The destination MyLocation.
+     * @param to       The destination LatLng.
      * @param distance The distance travelled, in meters.
      * @param heading  The heading in degrees clockwise from north.
      */
-    fun computeOffsetOrigin(to: MyLocation, distance: Double, heading: Double): MyLocation? {
-        var distance = distance
-        var heading = heading
-        heading = Math.toRadians(heading)
-        distance /= MathUtil.EARTH_RADIUS
+    fun computeOffsetOrigin(to: LatLng, distance: Double, heading: Double): LatLng? {
+        var _distance = distance
+        var _heading = heading
+        _heading = Math.toRadians(_heading)
+        _distance /= MathUtil.EARTH_RADIUS
         // http://lists.maptools.org/pipermail/proj/2008-October/003939.html
-        val n1 = Math.cos(distance)
-        val n2 = Math.sin(distance) * Math.cos(heading)
-        val n3 = Math.sin(distance) * Math.sin(heading)
+        val n1 = Math.cos(_distance)
+        val n2 = Math.sin(_distance) * Math.cos(_heading)
+        val n3 = Math.sin(_distance) * Math.sin(_heading)
         val n4 = Math.sin(Math.toRadians(to.latitude))
         // There are two solutions for b. b = n2 * n4 +/- sqrt(), one solution results
         // in the latitude outside the [-90, 90] range. We first try one solution and
@@ -78,7 +80,7 @@ object SphericalUtil {
         val n12 = n1 * n1
         val discriminant = n2 * n2 * n12 + n12 * n12 - n12 * n4 * n4
         if (discriminant < 0) {
-            // No real solution which would make sense in MyLocation-space.
+            // No real solution which would make sense in LatLng-space.
             return null
         }
         var b = n2 * n4 + Math.sqrt(discriminant)
@@ -91,24 +93,24 @@ object SphericalUtil {
             fromLatRadians = Math.atan2(a, b)
         }
         if (fromLatRadians < -Math.PI / 2 || fromLatRadians > Math.PI / 2) {
-            // No solution which would make sense in MyLocation-space.
+            // No solution which would make sense in LatLng-space.
             return null
         }
         val fromLngRadians = Math.toRadians(to.longitude) -
                 Math.atan2(n3, n1 * Math.cos(fromLatRadians) - n2 * Math.sin(fromLatRadians))
-        return MyLocation(Math.toDegrees(fromLatRadians), Math.toDegrees(fromLngRadians))
+        return LatLng(Math.toDegrees(fromLatRadians), Math.toDegrees(fromLngRadians))
     }
 
     /**
-     * Returns the MyLocation which lies the given fraction of the way between the
-     * origin MyLocation and the destination MyLocation.
+     * Returns the LatLng which lies the given fraction of the way between the
+     * origin LatLng and the destination LatLng.
      *
-     * @param from     The MyLocation from which to start.
-     * @param to       The MyLocation toward which to travel.
+     * @param from     The LatLng from which to start.
+     * @param to       The LatLng toward which to travel.
      * @param fraction A fraction of the distance to travel.
-     * @return The interpolated MyLocation.
+     * @return The interpolated LatLng.
      */
-    fun interpolate(from: MyLocation, to: MyLocation, fraction: Double): MyLocation? {
+    fun interpolate(from: LatLng, to: LatLng, fraction: Double): LatLng? {
         // http://en.wikipedia.org/wiki/Slerp
         val fromLat = Math.toRadians(from.latitude)
         val fromLng = Math.toRadians(from.longitude)
@@ -121,7 +123,7 @@ object SphericalUtil {
         val angle = computeAngleBetween(from, to)
         val sinAngle = Math.sin(angle)
         if (sinAngle < 1E-6) {
-            return MyLocation(
+            return LatLng(
                 from.latitude + fraction * (to.latitude - from.latitude),
                 from.longitude + fraction * (to.longitude - from.longitude)
             )
@@ -137,7 +139,7 @@ object SphericalUtil {
         // Converts interpolated vector back to polar.
         val lat = Math.atan2(z, Math.sqrt(x * x + y * y))
         val lng = Math.atan2(y, x)
-        return MyLocation(Math.toDegrees(lat), Math.toDegrees(lng))
+        return LatLng(Math.toDegrees(lat), Math.toDegrees(lng))
     }
 
     /**
@@ -151,7 +153,7 @@ object SphericalUtil {
      * Returns the angle between two LatLngs, in radians. This is the same as the distance
      * on the unit sphere.
      */
-    fun computeAngleBetween(from: MyLocation, to: MyLocation): Double {
+    fun computeAngleBetween(from: LatLng, to: LatLng): Double {
         return distanceRadians(
             Math.toRadians(from.latitude), Math.toRadians(from.longitude),
             Math.toRadians(to.latitude), Math.toRadians(to.longitude)
@@ -161,14 +163,14 @@ object SphericalUtil {
     /**
      * Returns the distance between two LatLngs, in meters.
      */
-    fun computeDistanceBetween(from: MyLocation, to: MyLocation): Double {
+    fun computeDistanceBetween(from: LatLng, to: LatLng): Double {
         return computeAngleBetween(from, to) * MathUtil.EARTH_RADIUS
     }
 
     /**
      * Returns the length of the given path, in meters, on Earth.
      */
-    fun computeLength(path: List<MyLocation>): Double {
+    fun computeLength(path: List<LatLng>): Double {
         if (path.size < 2) {
             return 0.0
         }
@@ -192,7 +194,7 @@ object SphericalUtil {
      * @param path A closed path.
      * @return The path's area in square meters.
      */
-    fun computeArea(path: List<MyLocation>): Double {
+    fun computeArea(path: List<LatLng>): Double {
         return Math.abs(computeSignedArea(path))
     }
 
@@ -204,7 +206,7 @@ object SphericalUtil {
      * @param path A closed path.
      * @return The loop's area in square meters.
      */
-    fun computeSignedArea(path: List<MyLocation>): Double {
+    fun computeSignedArea(path: List<LatLng>): Double {
         return computeSignedArea(path, MathUtil.EARTH_RADIUS)
     }
 
@@ -213,7 +215,7 @@ object SphericalUtil {
      * The computed area uses the same units as the radius squared.
      * Used by SphericalUtilTest.
      */
-    fun computeSignedArea(path: List<MyLocation>, radius: Double): Double {
+    fun computeSignedArea(path: List<LatLng>, radius: Double): Double {
         val size = path.size
         if (size < 3) {
             return 0.0

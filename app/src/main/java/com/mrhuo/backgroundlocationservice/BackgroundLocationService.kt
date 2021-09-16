@@ -16,12 +16,16 @@ import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Build
+import android.os.Bundle
 import android.os.IBinder
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
+import com.mrhuo.backgroundlocationservice.model.MyLocation
+import com.mrhuo.backgroundlocationservice.util.logger
+import java.io.Serializable
+import java.lang.Error
 import java.util.*
 import kotlin.concurrent.fixedRateTimer
-
 
 internal const val TAG = "BKLocationService"
 internal const val ACTION_LOCATION = "${TAG}.action.LOCATION"
@@ -75,6 +79,9 @@ class BackgroundLocationService : Service() {
                 logger("onProviderEnabled [$provider]")
                 reportProviderStatusChanged(this@BackgroundLocationService, provider, true)
             }
+
+            override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {
+            }
         }
         when (intent?.action) {
             ACTION_LOCATION -> {
@@ -122,8 +129,8 @@ class BackgroundLocationService : Service() {
                         val lossTime = if (mLastLocationTime != null) {
                             Date().time - mLastLocationTime!!.time
                         } else {
-                            //初次创建服务，但是二倍的检测周期之后，持续通知信号丢失
-                            (Date().time - mServiceCreateAt.time) / 2
+                            //初次创建服务，从服务创建开始计时
+                            Date().time - mServiceCreateAt.time
                         }
                         if (lossTime >= mLocationLossCheckInterval) {
                             reportLocationLoss(this@BackgroundLocationService, lossTime)
@@ -143,7 +150,7 @@ class BackgroundLocationService : Service() {
                 return START_STICKY
             }
             else -> {
-                logger(java.lang.Exception("接收到无效的动作：${intent?.action}"))
+                logger(Error("接收到无效的动作：${intent?.action}"))
             }
         }
         return super.onStartCommand(intent, flags, startId)
@@ -237,7 +244,7 @@ class BackgroundLocationService : Service() {
             try {
                 logger("reportLocation [$location]")
                 val intent = Intent(ACTION_REPORT_LOCATION)
-                intent.putExtra("location", location)
+                intent.putExtra("location", location as Serializable)
                 context.sendBroadcast(intent)
                 mLastLocationTime = Date()
             } catch (e: java.lang.Exception) {
